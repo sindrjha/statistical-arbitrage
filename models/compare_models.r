@@ -22,7 +22,7 @@ if (require("forecast") == FALSE) {
 compare_error_metrics <- function(hub_pairs, models, horizon, window_size) {
 
 
-    error_metrics <- c("mae", "rmse")
+    error_metrics <- c("mape", "rmse")
 
 
     # Initialize an empty list to store the results
@@ -67,20 +67,20 @@ compare_error_metrics <- function(hub_pairs, models, horizon, window_size) {
 
         
         # Calculate MAE and RMSE for hub1
-        model_mae_hub1 <- mae(actuals_hub1[[hub1_name]], model1_predictions[[hub1_name]])
+        model_mape_hub1 <- mape(actuals_hub1[[hub1_name]], model1_predictions[[hub1_name]])*100
         model_rmse_hub1 <- rmse(actuals_hub1[[hub1_name]], model1_predictions[[hub1_name]])
 
         # Calculate MAE and RMSE for hub2
-        model_mae_hub2 <- mae(actuals_hub2[[hub2_name]], model1_predictions[[hub2_name]])
+        model_mape_hub2 <- mape(actuals_hub2[[hub2_name]], model1_predictions[[hub2_name]])*100
         model_rmse_hub2 <- rmse(actuals_hub2[[hub2_name]], model1_predictions[[hub2_name]])
         
         # Store the metrics for hub1
-        hub1_df[i, "mae"] <- model_mae_hub1
-        hub1_df[i, "rmse"] <- model_rmse_hub1
+        hub1_df[i, "mape"] <- round(model_mape_hub1, 2)
+        hub1_df[i, "rmse"] <- round(model_rmse_hub1, 2)
         
         # Store the metrics for hub2
-        hub2_df[i, "mae"] <- model_mae_hub2
-        hub2_df[i, "rmse"] <- model_rmse_hub2
+        hub2_df[i, "mape"] <- round(model_mape_hub2, 2)
+        hub2_df[i, "rmse"] <- round(model_rmse_hub2, 2)
     }
 
     hub_results <- list(hub1 = hub1_df, hub2 = hub2_df)
@@ -159,7 +159,7 @@ diebold_mariano <- function(hub_pairs, models, horizon, window_size) {
                 model1_predictions <- cbind(model1_hub1_predictions, model1_hub2_predictions)
             }
             else {
-                model1_filename <- paste0("../predictions/", hub1_name, "_", hub2_name, "_h", horizon, "_w", window_size, "_", model1, "_predictions.csv")
+                model1_filename <- paste0("../predictions/test/predictions/", hub1_name, "_", hub2_name, "_h", horizon, "_w", window_size, "_", model1, "_predictions.csv")
                 model1_predictions <- read.csv(model1_filename)
             }
 
@@ -171,7 +171,7 @@ diebold_mariano <- function(hub_pairs, models, horizon, window_size) {
                 model2_predictions <- cbind(model2_hub1_predictions, model2_hub2_predictions)
             }
             else {
-                model2_filename <- paste0("../predictions/", hub1_name, "_", hub2_name, "_h", horizon, "_w", window_size, "_", model2, "_predictions.csv")
+                model2_filename <- paste0("../predictions/test/predictions/", hub1_name, "_", hub2_name, "_h", horizon, "_w", window_size, "_", model2, "_predictions.csv")
                 model2_predictions <- read.csv(model2_filename)
             }
 

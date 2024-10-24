@@ -135,7 +135,7 @@ arima_system <- function(hub1_name, validation_size=250, test_size = 250, window
   arima_validation_output <- arima_validation_predictions(hub, validation_size = validation_size, test_size = test_size, window_size = window_size, arima_order = arima_order)
 
   if (verbose) {
-    print(paste("Order:", arima_order))
+    print(paste("AR:", arima_order[1], "I:", arima_order[2], "MA:", arima_order[3]))
     hub_predictions <- arima_output$predictions$hub
     hub_actuals <- arima_output$actuals$hub
 

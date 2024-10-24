@@ -55,7 +55,13 @@ predict.TVECM <- function(object, newdata, n.ahead=5,
                       nthresh= nthresh,
                       Thresh = Thresh, 
                       starting=starting, innov=innov)
-  
+                      
+  if (n.ahead == 1) {
+    res <- matrix(res, nrow = 1)  # Convert vector to matrix with 1 row
+  }
+
+  # Format results by assigning column names
+  colnames(res) <- colnames(original.data)
   ## format results
   colnames(res) <- colnames(original.data)
   end_rows <- nrow(original.data) + n.ahead
@@ -166,18 +172,18 @@ tvecm_system <- function(hub1_name, hub2_name, validation_size = 250, test_size 
 
     train_size <- nrow(hubs) - test_size - window_size
     hub_train <- hubs[1:train_size + 1, ]
-
-    aics <- c()
-    bics <- c()
-    max_lag <- 8
-    for (p in 1:max_lag) {
-      tvecm <- TVECM(hub_train, include = "const", nthresh=nthresh,lag=p, ngridBeta=100, ngridTh=200, plot=TRUE,trim=0.05, common="All")
-      aics <- c(aics, AIC(tvecm))
-      bics <- c(bics, BIC(tvecm))
+    if(is.null(lags)) {
+      aics <- c()
+      bics <- c()
+      max_lag <- 8
+      for (p in 1:max_lag) {
+        tvecm <- TVECM(hub_train, include = "const", nthresh=nthresh,lag=p, ngridBeta=100, ngridTh=200, plot=TRUE,trim=0.05, common="All")
+        aics <- c(aics, AIC(tvecm))
+        bics <- c(bics, BIC(tvecm))
+      }
+      lags <- which.min(bics)
     }
-    lags <- which.min(bics)
       
-
     tvecm_output <- tvecm_test_predictions(hubs, window_size = window_size, test_size = test_size, nthresh = nthresh, lags = lags)
     tvecm_validation_output <- tvecm_validation_predictions(hubs, window_size = window_size, validation_size = validation_size, test_size = test_size, nthresh = nthresh, lags = lags)
 

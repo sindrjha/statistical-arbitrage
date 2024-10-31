@@ -91,13 +91,12 @@ tvecm_test_predictions <- function(hubs, window_size = 5, test_size = 250, nthre
     train_size <- nrow(hubs) - test_size - window_size + i
     hub_train <- hubs[1:train_size, ]
 
-    tvec <- TVECM(hub_train, include = "const", nthresh=nthresh,lag=lags, ngridBeta=100, ngridTh=100, plot=TRUE,trim=0.05, common="All")
+    tvec <- TVECM(hub_train, include = "const", nthresh=nthresh,lag=lags, ngridBeta=100, ngridTh=150, plot=TRUE,trim=0.05, common="All")
 
     start <- train_size - lags
     end <- train_size
 
     pred_data <- hubs[start:end, ]
-    # Fit the VECM model
 
     hub_forecast <- predict.TVECM(tvec, newdata=pred_data, n.ahead=window_size)
     
@@ -124,16 +123,16 @@ tvecm_validation_predictions <- function(hubs, window_size = 5, validation_size 
   colnames(predictions) <- colnames(hubs)
   colnames(last_available) <- colnames(hubs)
   colnames(actuals) <- colnames(hubs)
-
-  train_size <- nrow(hubs) - test_size - validation_size - window_size
-  hub_train <- hubs[1:(train_size + 1), ]
-
-  tvec <- TVECM(hub_train, include = "const", nthresh=nthresh,lag=lags, ngridBeta=100, ngridTh=200, plot=TRUE,trim=0.05, common="All")
   
   for (i in 1:validation_size) {
 
-    start <- train_size - lags + i
-    end <- train_size + i
+    train_size <- nrow(hubs) - test_size - validation_size - window_size + i
+    hub_train <- hubs[1:train_size, ]
+
+    start <- train_size - lags
+    end <- train_size
+
+    tvec <- TVECM(hub_train, include = "const", nthresh=nthresh,lag=lags, ngridBeta=100, ngridTh=150, plot=TRUE,trim=0.05, common="All")
 
     pred_data <- hubs[start:end, ]
 
@@ -176,7 +175,7 @@ tvecm_system <- function(hub1_name, hub2_name, validation_size = 250, test_size 
       bics <- c()
       max_lag <- 8
       for (p in 1:max_lag) {
-        tvecm <- TVECM(hub_train, include = "const", nthresh=nthresh,lag=p, ngridBeta=100, ngridTh=200, plot=TRUE,trim=0.05, common="All")
+        tvecm <- TVECM(hub_train, include = "const", nthresh=nthresh,lag=p, ngridBeta=100, ngridTh=150, plot=TRUE,trim=0.05, common="All")
         aics <- c(aics, AIC(tvecm))
         bics <- c(bics, BIC(tvecm))
       }
@@ -223,9 +222,9 @@ tvecm_system <- function(hub1_name, hub2_name, validation_size = 250, test_size 
         last_available <- cbind(data.frame(Date = prediction_dates), last_available, row.names = NULL)
         actuals <- cbind(data.frame(Date = prediction_dates), actuals, row.names = NULL)
 
-        write.csv(actuals, paste0("../../predictions/test/actuals/",hub1_name,"_", hub2_name, "_h", test_size, "_w", window_size, "_tvecm_", "t", nthresh, "_actuals.csv"), row.names = FALSE)
-        write.csv(last_available, paste0("../../predictions/test/last_available/",hub1_name,"_", hub2_name, "_h", test_size, "_w", window_size, "_tvecm_", "t", nthresh, "_last_available.csv"), row.names = FALSE)
-        write.csv(predictions, paste0("../../predictions/test/predictions/",hub1_name,"_", hub2_name, "_h", test_size, "_w", window_size, "_tvecm_", "t", nthresh, "_predictions.csv"), row.names = FALSE)
+        write.csv(actuals, paste0("../../predictions/test/actuals/",hub1_name,"_", hub2_name, "_h", test_size, "_w", window_size, "_tvecm_long_", "t", nthresh, "_actuals.csv"), row.names = FALSE)
+        write.csv(last_available, paste0("../../predictions/test/last_available/",hub1_name,"_", hub2_name, "_h", test_size, "_w", window_size, "_tvecm_long_", "t", nthresh, "_last_available.csv"), row.names = FALSE)
+        write.csv(predictions, paste0("../../predictions/test/predictions/",hub1_name,"_", hub2_name, "_h", test_size, "_w", window_size, "_tvecm_long_", "t", nthresh, "_predictions.csv"), row.names = FALSE)
 
         predictions <- tvecm_validation_output$predictions
         last_available <- tvecm_validation_output$last_available
@@ -237,9 +236,9 @@ tvecm_system <- function(hub1_name, hub2_name, validation_size = 250, test_size 
         predictions <- cbind(data.frame(Date = prediction_dates), predictions, row.names = NULL)
         last_available <- cbind(data.frame(Date = prediction_dates), last_available, row.names = NULL)
         actuals <- cbind(data.frame(Date = prediction_dates), actuals, row.names = NULL)
-        write.csv(actuals, paste0("../../predictions/validation/actuals/",hub1_name,"_", hub2_name,"_v", validation_size, "_h", test_size, "_w", window_size, "_tvecm_", "t", nthresh, "_actuals.csv"), row.names = FALSE)
-        write.csv(last_available, paste0("../../predictions/validation/last_available/",hub1_name,"_", hub2_name, "_v", validation_size, "_h", test_size, "_w", window_size,  "_tvecm_", "t", nthresh, "_last_available.csv"), row.names = FALSE)
-        write.csv(predictions, paste0("../../predictions/validation/predictions/",hub1_name,"_", hub2_name, "_v", validation_size, "_h", test_size, "_w", window_size,  "_tvecm_", "t", nthresh, "_predictions.csv"), row.names = FALSE)
+        write.csv(actuals, paste0("../../predictions/validation/actuals/",hub1_name,"_", hub2_name,"_v", validation_size, "_h", test_size, "_w", window_size, "_tvecm_long_", "t", nthresh, "_actuals.csv"), row.names = FALSE)
+        write.csv(last_available, paste0("../../predictions/validation/last_available/",hub1_name,"_", hub2_name, "_v", validation_size, "_h", test_size, "_w", window_size,  "_tvecm_long_", "t", nthresh, "_last_available.csv"), row.names = FALSE)
+        write.csv(predictions, paste0("../../predictions/validation/predictions/",hub1_name,"_", hub2_name, "_v", validation_size, "_h", test_size, "_w", window_size,  "_tvecm_long_", "t", nthresh, "_predictions.csv"), row.names = FALSE)
     }
 
     return(tvecm_output)
@@ -269,14 +268,14 @@ tvecm_training_model <- function(hub1_name, hub2_name, test_size = 250, window_s
       bics <- c()
       max_lag <- 8
       for (p in 1:max_lag) {
-        tvecm <- TVECM(hub_train, include = "const", nthresh=nthresh,lag=p, ngridBeta=100, ngridTh=200, plot=TRUE,trim=0.05, common="All")
+        tvecm <- TVECM(hub_train, include = "const", nthresh=nthresh,lag=p, ngridBeta=100, ngridTh=150, plot=TRUE,trim=0.05, common="All")
         aics <- c(aics, AIC(tvecm))
         bics <- c(bics, BIC(tvecm))
       }
       lags <- which.min(bics)
     }
 
-    vecm_model <- TVECM(hub_train, include = "const", nthresh=nthresh,lag=lags, ngridBeta=100, ngridTh=200, plot=TRUE,trim=0.05, common="All")
+    vecm_model <- TVECM(hub_train, include = "const", nthresh=nthresh,lag=lags, ngridBeta=100, ngridTh=150, plot=TRUE,trim=0.05, common="All")
 
     return(vecm_model)
 

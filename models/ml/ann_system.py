@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input, Dropout
@@ -7,22 +8,23 @@ from tensorflow.keras.optimizers import Adam
 from sklearn.metrics import mean_absolute_percentage_error
 
 
-def ann_system(hub1_name, hub2_name, validation_size, test_size, window_size, params, verbose=True, save=True):
-    keras.utils.set_random_seed(42)
+def ann_system(hub1_name, hub2_name, validation_size, test_size, window_size, params, verbose=True, save=False):
+    
+   
+
+
     hub1 = pd.read_csv(f"../../data/interpolated/{hub1_name}_close_interpolated.csv")
     hub2 = pd.read_csv(f"../../data/interpolated/{hub2_name}_close_interpolated.csv")
 
     hub1 = hub1.rename(columns={"CLOSE": "hub1_CLOSE"})
     hub2 = hub2.rename(columns={"CLOSE": "hub2_CLOSE"})
     hub1_hub2_diff = pd.DataFrame(hub1["hub1_CLOSE"] - hub2["hub2_CLOSE"], columns=["hub1_hub2_diff"], index=hub1.index)
-
-    # Shift columns and store in new columns for hub1, hub2, and hub1_hub2_diff
+    
     for i in range(window_size, window_size + params['lags'] + 1):
         hub1[f"hub1_CLOSE-{i- window_size}"] = hub1["hub1_CLOSE"].shift(i)
         hub2[f"hub2_CLOSE-{i - window_size}"] = hub2["hub2_CLOSE"].shift(i)
         hub1_hub2_diff[f"hub1_hub2_diff-{i - window_size}"] = hub1_hub2_diff["hub1_hub2_diff"].shift(i)
 
-    # Concatenate and drop NaN rows in one step
     data = pd.concat([hub1, hub2, hub1_hub2_diff], axis=1).dropna()
 
     features = [
@@ -31,40 +33,34 @@ def ann_system(hub1_name, hub2_name, validation_size, test_size, window_size, pa
         'hub1_hub2_diff-0', 'hub1_hub2_diff-1', 'hub1_hub2_diff-2', 'hub1_hub2_diff-3', 'hub1_hub2_diff-4', 'hub1_hub2_diff-5',# 'hub1_hub2_diff-6'
     ]
 
+
     X = data[features].values
 
     y = data[['hub1_CLOSE', 'hub2_CLOSE']].values
 
     X_train, X_test = X[:-test_size], X[-test_size:]
     y_train, y_test = y[:-test_size], y[-test_size:]
+    
 
     X_train, X_val = X_train[:-validation_size], X_train[-validation_size:]
     y_train, y_val = y_train[:-validation_size], y_train[-validation_size:]
 
-    batch_size = params['batch_size']
     lr = params['lr']
     units = params['units']
 
+    keras.utils.set_random_seed(42)
     # Build a simple ANN model
     model = Sequential([
         Dense(units, activation='relu'),
-        #Dense(1, activation='linear'),
-        Dense(2)  # 2 outputs for both hubs
+        Dense(2)
     ])
-    #lr = 0.0038336791635842195 #TTF-THE
-    #lr = 0.00026670003536052503 #TTF-NBP
-    #lr = 0.0018046087209813773 #THE-NBP 2
-    #lr = 0.003319584493448066 #THE-NBP
-    #lr = 0.001
-    # Compile the model
+    
     model.compile(optimizer=Adam(learning_rate=lr), loss='mape')
 
-    # Train the model
-    history = model.fit(X_train[:-window_size + 1], y_train[:-window_size + 1], epochs=25, batch_size=batch_size, 
-                        #validation_data=(X_val, y_val), 
+    
+    history = model.fit(X_train[:-window_size + 1], y_train[:-window_size + 1], epochs=25, batch_size=1, 
                         shuffle=False,
                         verbose=1)
-
     val_predictions = model.predict(X_val)
     
 
@@ -72,16 +68,19 @@ def ann_system(hub1_name, hub2_name, validation_size, test_size, window_size, pa
     val_predictions_df = pd.DataFrame(val_predictions, columns=[hub1_name, hub2_name])
     val_predictions_df['Date'] = val_dates.flatten()
 
+    keras.utils.set_random_seed(42)
+    model = Sequential([
+        Dense(units, activation='relu'),
+        Dense(2) 
+    ])
+    
+    model.compile(optimizer=Adam(learning_rate=lr), loss='mape')
+    history = model.fit(np.vstack([X_train, X_val])[:-window_size + 1], np.vstack([y_train, y_val])[:-window_size + 1], shuffle = False, epochs=25, batch_size=1, verbose=0)
 
-    history = model.fit(np.vstack([X_train, X_val])[:-window_size + 1], np.vstack([y_train, y_val])[:-window_size + 1], shuffle = False, epochs=25, batch_size=batch_size, verbose=0)
-
-    # Predict on test data
     test_predictions = model.predict(X_test)
     test_dates = hub1[['Date']].values[-test_size:]
     test_predictions_df = pd.DataFrame(test_predictions, columns=[hub1_name, hub2_name])
     test_predictions_df['Date'] = test_dates.flatten()
-
-
 
     if save:
         # Save the model

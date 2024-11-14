@@ -232,7 +232,7 @@ tvecm_system <- function(hub1_name, hub2_name, validation_size = 250, test_size 
         colnames(predictions) <- c(hub1_name, hub2_name)
         colnames(last_available) <- c(hub1_name, hub2_name)
         colnames(actuals) <- c(hub1_name, hub2_name)
-        prediction_dates <- tail(hub1$Date, test_size + validation_size)
+        prediction_dates <- head(tail(hub1$Date, test_size + validation_size), validation_size)
         predictions <- cbind(data.frame(Date = prediction_dates), predictions, row.names = NULL)
         last_available <- cbind(data.frame(Date = prediction_dates), last_available, row.names = NULL)
         actuals <- cbind(data.frame(Date = prediction_dates), actuals, row.names = NULL)

@@ -7,7 +7,7 @@ from tensorflow.keras.optimizers import Adam
 from sklearn.metrics import mean_absolute_percentage_error
 
 def ann_system_rolling(hub1_name, hub2_name, validation_size, test_size, window_size, params, verbose=True, save=True):
-    keras.utils.set_random_seed(42)
+    
     hub1 = pd.read_csv(f"../../data/interpolated/{hub1_name}_close_interpolated.csv")
     hub2 = pd.read_csv(f"../../data/interpolated/{hub2_name}_close_interpolated.csv")
 
@@ -32,7 +32,6 @@ def ann_system_rolling(hub1_name, hub2_name, validation_size, test_size, window_
     X = data[features].values
     y = data[['hub1_CLOSE', 'hub2_CLOSE']].values
 
-    batch_size = params['batch_size']
     lr = params['lr']
     units = params['units']
 
@@ -44,19 +43,21 @@ def ann_system_rolling(hub1_name, hub2_name, validation_size, test_size, window_
     X_val, y_val = X[-(validation_size + test_size):-test_size], y[-(validation_size + test_size):-test_size]
     X_test, y_test = X[-test_size:], y[-test_size:]
 
-    model = Sequential([
-        Dense(units, activation='relu'),
-        Dense(2)
-    ])
-    model.compile(optimizer=Adam(learning_rate=lr), loss='mape')
+    
 
     # Rolling prediction for validation data
     for i in range(len(X_val)):
+        keras.utils.set_random_seed(42)
+        model = Sequential([
+            Dense(units, activation='relu'),
+            Dense(2)
+        ])
+        model.compile(optimizer=Adam(learning_rate=lr), loss='mape')
         # Train on all data up to the current validation point, accounting for the window size offset
         X_train_current = X[:-(validation_size + test_size) + i - window_size + 1]
         y_train_current = y[:-(validation_size + test_size) + i - window_size + 1]
 
-        model.fit(X_train_current, y_train_current, epochs=25, batch_size=batch_size, verbose=0, shuffle=False)
+        model.fit(X_train_current, y_train_current, epochs=25, batch_size=1, verbose=0, shuffle=False)
         val_predictions.append(model.predict(X_val[i:i+1]))
 
     # Convert validation predictions to array for evaluation or saving
@@ -67,11 +68,17 @@ def ann_system_rolling(hub1_name, hub2_name, validation_size, test_size, window_
 
     # Rolling prediction for test data
     for i in range(len(X_test)):
+        keras.utils.set_random_seed(42)
+        model = Sequential([
+            Dense(units, activation='relu'),
+            Dense(2)
+        ])
+        model.compile(optimizer=Adam(learning_rate=lr), loss='mape')
         # Train on all data up to the current test point, with the window size offset
         X_train_current = X[:-test_size + i - window_size + 1]
         y_train_current = y[:-test_size + i - window_size + 1]
 
-        model.fit(X_train_current, y_train_current, epochs=25, batch_size=batch_size, verbose=0, shuffle=False)
+        model.fit(X_train_current, y_train_current, epochs=25, batch_size=1, verbose=0, shuffle=False)
         test_predictions.append(model.predict(X_test[i:i+1]))
 
     test_predictions = np.array(test_predictions).squeeze()

@@ -1,42 +1,9 @@
-if (require("dplyr") == FALSE) {
-  install.packages("dplyr")
-  library(dplyr)
-}
-if (require("zoo") == FALSE) {
-  install.packages("zoo")
-  library(zoo)
-}
-
-if (require("forecast") == FALSE) {
-  install.packages("forecast")
-  library(forecast)
-}
-if (require("tseries") == FALSE) {
-  install.packages("tseries")
-  library(tseries)
-}
-if (require("moments") == FALSE) {
-  install.packages("moments")
-  library(moments)
-}
-if (require("tibble") == FALSE) {
-  install.packages("tibble")
-  library(tibble)
-}
-if (require("urca") == FALSE) {
-  install.packages("urca")
-  library(urca)
-}
-if (require("kableExtra") == FALSE) {
-  install.packages("kableExtra")
-  library(kableExtra)
-}
 if (require("rugarch") == FALSE) {
   install.packages("rugarch")
   library(rugarch)
 }
 
-cointegration <- function(hub1_name, hub2_name, rolling_window, validation_size = 250, test_size = 250, window_size = 5, model = "ols", lags=NULL, save=TRUE) {
+cointegration <- function(hub1_name, hub2_name, rolling_window, validation_size = 250, test_size = 250, window_size = 5, model = "ols", garch_model = "sGARCH", garch_order = c(1,1), garch_dist="norm", save=TRUE) {
 
     hub_prices <- list(
         nbp = read.csv("../../data/interpolated/nbp_close_interpolated.csv"),
@@ -51,48 +18,66 @@ cointegration <- function(hub1_name, hub2_name, rolling_window, validation_size 
 
     hubs <- data.frame(hub1 = hub1$CLOSE, hub2 = hub2$CLOSE)
 
-    train_size <- nrow(hubs) - test_size - window_size
-    hub_train <- hubs[1:train_size + 1, ]
-
-    if(is.null(lags) & (model == "vecm")) {
-        aics <- c()
-        bics <- c()
-        max_lag <- 20
-        for (p in 1:max_lag) {
-        vecm <- VECM(hub_train, lag = p,  r = 1, include = "none", estim = "ML")
-        aics <- c(aics, AIC(vecm))
-        bics <- c(bics, BIC(vecm))
-        }
-        lags <- which.min(bics)
-    }
-
     results <- data.frame(
         Date = hub1$Date,
         hub1 = hub1$CLOSE,
         hub2 = hub2$CLOSE,
+        alpha = rep(NA, nrow(hubs)),
         beta = rep(NA, nrow(hubs)),
-        hub_diff = rep(NA, nrow(hubs))  # Initialize with NA
+        sigma = rep(NA, nrow(hubs)),
+        residuals = rep(NA, nrow(hubs))  # Initialize with NA
     )
 
+    start <- nrow(hubs) - validation_size - test_size - window_size
 
-    for (i in rolling_window :nrow(hubs)) {
+
+    for (i in start :nrow(hubs)) {
         hub_train <- hubs[(i - rolling_window+1):i, ]
 
         if (model == "ols") {
             ols <- lm(hub_train$hub1 ~ hub_train$hub2)
+            alpha <- coef(ols)[1]
             beta <- coef(ols)[2]
-        } else {
-          vecm <- VECM(hub_train, lag = lags, r = 1, include = "none", estim = "ML")
-          beta <- (-1) * vecm$model.specific$beta[2, 1]
+
         }
+
+
+
+        resids <- residuals(ols)
+
+
+        spec <- ugarchspec(
+        variance.model = list(model = garch_model, garchOrder = garch_order),
+        mean.model = list(armaOrder = c(0,0), include.mean = FALSE),
+        distribution.model = garch_dist
+        )
+        garch_fit <- tryCatch({
+            ugarchfit(spec = spec, data = resids, solver = "hybrid")
+        }, error = function(e) {
+            message("Hybrid solver failed, trying default solver.")
+            ugarchfit(spec = spec, data = resids)
+        })
+        sigma <- tail(sigma(garch_fit), 1)
+        
+        results$alpha[i] <- alpha
         results$beta[i] <- beta
-        results$hub_diff[i] <- hubs$hub1[i] - beta * hubs$hub2[i]
+        results$sigma[i] <- sigma
+        results$residuals[i] <- hubs$hub1[i] - alpha - beta * hubs$hub2[i]
     }
 
-    colnames(results) <- c("Date", hub1_name, hub2_name, "beta", "hub_diff")
+    colnames(results) <- c("Date", hub1_name, hub2_name, "alpha", "beta", "Sigma", "residuals")
 
     if (save) {
         write.csv(results, paste0("../../predictions/cointegration/",hub1_name,"_", hub2_name, "_r", rolling_window, "_v", validation_size, "_h", test_size, "_w", window_size, "_", model, "_cointegration.csv"), row.names = FALSE)
+        validation_results <- results[(nrow(results) - test_size - validation_size - window_size + 1):(nrow(results) - test_size  - window_size), ]
+        test_results <- results[(nrow(results) - test_size - window_size + 1):(nrow(results) - window_size), ]
+        if (all(garch_order == c(1, 1))) {
+          write.csv(validation_results, paste0("../../predictions/validation/predictions/",hub1_name,"_", hub2_name, "_v", validation_size, "_h", test_size, "_w", window_size,  "_", garch_model, "_",  garch_dist, "_cointegration_predictions.csv"), row.names = FALSE)
+          write.csv(test_results, paste0("../../predictions/test/predictions/",hub1_name,"_", hub2_name, "_h", test_size, "_w", window_size,  "_", garch_model, "_",  garch_dist, "_cointegration_predictions.csv"), row.names = FALSE)
+        } else {
+          write.csv(validation_results, paste0("../../predictions/validation/predictions/",hub1_name,"_", hub2_name, "_v", validation_size, "_h", test_size, "_w", window_size,  "_", garch_model, "_",  garch_dist, "_", garch_order[1], garch_order[2], "_cointegration_predictions.csv"), row.names = FALSE)
+          write.csv(test_results, paste0("../../predictions/test/predictions/",hub1_name,"_", hub2_name, "_h", test_size, "_w", window_size, "_", garch_model, "_",  garch_dist, "_", garch_order[1], garch_order[2], "_cointegration_predictions.csv"), row.names = FALSE)
+        }
     }
 
     return(results)

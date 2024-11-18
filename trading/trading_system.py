@@ -122,11 +122,11 @@ class TradingSystem:
 
         cointegration_data = pd.read_csv(f"../predictions/cointegration/{self.hub1_name}_{self.hub2_name}_r{cointegration_rolling_window}_v{self.validation_size}_h{self.test_size}_w{self.window_size}_{self.model}_cointegration.csv")
 
-        self.price_difference = cointegration_data[["hub_diff"]]
+        self.price_difference = cointegration_data[["residuals"]]
         self.cointegration_beta = cointegration_data[["beta"]]
 
 
-    def run_trading_system(self, volatility = "rolling", rolling_window=5, lower_threshold=0,  naive=False, verbose=False, plot=False):
+    def run_trading_system(self, volatility = "rolling", rolling_window=5, lower_threshold=0,  special_strategy = "no", verbose=False, plot=False):
         np.random.seed(42)
 
         size = self.validation_size if self.mode == "validation" else self.test_size
@@ -153,7 +153,7 @@ class TradingSystem:
                 garch_predictions = pd.read_csv(f"../predictions/{self.mode}/predictions/{data}_{volatility}_cointegration_predictions.csv")
 
 
-        for i in range(self.validation_size):
+        for i in range(size):
 
             if self.strategy == "forecasting":
                 difference_series = self.returns_difference
@@ -186,7 +186,7 @@ class TradingSystem:
             net_profit_hub1 = self.hub1_historical_data.values[-start + i + self.window_size].item() - self.hub1_historical_data.values[-start + i].item()
             net_profit_hub2 = self.hub2_historical_data.values[-start + i + self.window_size].item() - self.hub2_historical_data.values[-start + i].item()
 
-            if (current_difference >  lower_threshold * std_dev) or (naive and r < 0.5):
+            if (current_difference >  lower_threshold * std_dev) or (special_strategy == "naive" and difference_series[-start +i] > 0) or (special_strategy == "perfect_information" and difference_series[-start + self.window_size +i] > 0):
                 
                 if self.strategy == "forecasting":
                     # Go long on hub1 and short on hub2
@@ -201,7 +201,7 @@ class TradingSystem:
 
                 self.trades[i] = 1
 
-            elif (current_difference <  - lower_threshold * std_dev) or (naive and r >= 0.5):
+            elif (current_difference <  - lower_threshold * std_dev) or (special_strategy == "naive" and difference_series[-start +i] < 0) or (special_strategy == "perfect_information" and difference_series[-start + self.window_size +i] < 0):
 
                 if self.strategy == "forecasting":
                     # Go short on hub1 and long on hub2
@@ -215,6 +215,8 @@ class TradingSystem:
                     self.returns_with_transaction_costs[i] = hub1_return_with_transaction_costs - cointegration_beta*hub2_return_with_transaction_costs
 
                 self.trades[i] = 1
+            
+
 
             self.pl[i] = self.profit
 

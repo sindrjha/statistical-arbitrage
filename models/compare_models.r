@@ -65,7 +65,7 @@ directional_value <- function(actual, predicted) {
   # Calculate the weighted sum where direction is correct and penalize where it is wrong
   directional_value_result <- (sum(abs(actual) * correct_direction) - sum(abs(actual) * wrong_direction)) / length(actual)
   
-  return(directional_value_result*100)
+  return(directional_value_result)
 }
 
 

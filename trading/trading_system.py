@@ -6,6 +6,8 @@ import plotly.graph_objs as go
 
 class TradingSystem:
     def __init__(self, hub1_name, hub2_name, model, validation_size, test_size, window_size, mode = "validation", strategy = "forecasting", cointegration_rolling_window = None):
+        
+        np.random.seed(42)
         self.hub1_name = hub1_name
         self.hub2_name = hub2_name
         self.model = model
@@ -127,7 +129,7 @@ class TradingSystem:
 
 
     def run_trading_system(self, volatility = "rolling", rolling_window=5, lower_threshold=0,  special_strategy = "no", verbose=False, plot=False):
-        np.random.seed(42)
+        
 
         size = self.validation_size if self.mode == "validation" else self.test_size
         transaction_costs = 0.005
@@ -186,7 +188,7 @@ class TradingSystem:
             net_profit_hub1 = self.hub1_historical_data.values[-start + i + self.window_size].item() - self.hub1_historical_data.values[-start + i].item()
             net_profit_hub2 = self.hub2_historical_data.values[-start + i + self.window_size].item() - self.hub2_historical_data.values[-start + i].item()
 
-            if (current_difference >  lower_threshold * std_dev) or (special_strategy == "naive" and difference_series[-start +i] > 0) or (special_strategy == "perfect_information" and difference_series[-start + self.window_size +i] > 0):
+            if (current_difference >  lower_threshold * std_dev) or (special_strategy == "naive" and np.random.uniform() > 0.5) or (special_strategy == "perfect_information" and difference_series[-start + self.window_size +i] > 0):
                 
                 if self.strategy == "forecasting":
                     # Go long on hub1 and short on hub2
@@ -201,7 +203,7 @@ class TradingSystem:
 
                 self.trades[i] = 1
 
-            elif (current_difference <  - lower_threshold * std_dev) or (special_strategy == "naive" and difference_series[-start +i] < 0) or (special_strategy == "perfect_information" and difference_series[-start + self.window_size +i] < 0):
+            elif (current_difference <  - lower_threshold * std_dev) or (special_strategy == "naive") or (special_strategy == "perfect_information" and difference_series[-start + self.window_size +i] < 0):
 
                 if self.strategy == "forecasting":
                     # Go short on hub1 and long on hub2
@@ -216,6 +218,46 @@ class TradingSystem:
 
                 self.trades[i] = 1
             
+            if self.returns[i] < 0:
+                pass
+
+            if True:
+                # Check if the current date is a specific date
+                current_date = pd.Timestamp(self.hub1_historical_data.index[-start + i])
+                settle_date = pd.Timestamp(self.hub1_historical_data.index[-start + i + self.window_size])
+                specific_dates = { 
+                    "ttf" : [pd.Timestamp('2023-12-25'), 
+                            pd.Timestamp('2023-12-26'),
+                            pd.Timestamp('2024-01-01'),
+                            pd.Timestamp('2024-03-29'),
+                            pd.Timestamp('2024-04-01'),
+                            ] ,
+                    "the" : [pd.Timestamp('2023-12-25'),
+                            pd.Timestamp('2023-12-26'),
+                            pd.Timestamp('2024-01-01'),
+                            pd.Timestamp('2024-01-12'),
+                            pd.Timestamp('2024-03-29'),
+                            pd.Timestamp('2024-04-01'),
+                            pd.Timestamp('2024-05-01'),
+                            ] ,
+                    "nbp" : [pd.Timestamp('2023-12-25'),
+                            pd.Timestamp('2023-12-26'),
+                            pd.Timestamp('2024-01-01'),
+                            pd.Timestamp('2024-03-29'),
+                            pd.Timestamp('2024-04-01'),
+                            pd.Timestamp('2024-05-06'),
+                            pd.Timestamp('2024-05-27'),
+                            pd.Timestamp('2024-08-26'),
+                            ] 
+                }
+                hub1_missing_dates = specific_dates[self.hub1_name]
+                hub2_missing_dates = specific_dates[self.hub2_name]
+                missing_dates = hub1_missing_dates + hub2_missing_dates
+
+                if current_date in missing_dates or settle_date in missing_dates:
+                    self.trades[i] = 0
+                    self.returns[i] = 0
+                    self.returns_with_transaction_costs[i] = 0
 
 
             self.pl[i] = self.profit
@@ -240,6 +282,8 @@ class TradingSystem:
             print(f"Win rate for returns with transaction costs: {trade_rates['win_rate_returns_with_tc']:.2%}")
             print(f"No trade rate for returns with transaction costs: {trade_rates['no_trade_rate_returns_with_tc']:.2%}")
             print(f"Loss rate for returns with transaction costs: {trade_rates['loss_rate_returns_with_tc']:.2%}")
+
+        
 
         if plot:
             fig = go.Figure()
@@ -328,8 +372,11 @@ class TradingSystem:
         return -float('inf')
 
        
+    def get_dates(self):
+        return self.hub1_historical_data.tail(self.test_size).index
 
-
+    def get_returns(self):
+        return self.returns
 
     def get_profit(self):
         return self.profit

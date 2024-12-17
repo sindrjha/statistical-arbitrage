@@ -49,7 +49,6 @@ def ann_system(hub1_name, hub2_name, validation_size, test_size, window_size, pa
     units = params['units']
 
     keras.utils.set_random_seed(42)
-    # Build a simple ANN model
     model = Sequential([
         Dense(units, activation='relu'),
         Dense(2)
@@ -83,7 +82,6 @@ def ann_system(hub1_name, hub2_name, validation_size, test_size, window_size, pa
     test_predictions_df['Date'] = test_dates.flatten()
 
     if save:
-        # Save the model
         val_predictions_df.to_csv(f"../../predictions/validation/predictions/{hub1_name}_{hub2_name}_v{validation_size}_h{test_size}_w{window_size}_ann_predictions.csv", index=False)
         test_predictions_df.to_csv(f"../../predictions/test/predictions/{hub1_name}_{hub2_name}_h{test_size}_w{window_size}_ann_predictions.csv", index=False)
 
@@ -104,11 +102,9 @@ def ann_system(hub1_name, hub2_name, validation_size, test_size, window_size, pa
         test_actual_df.to_csv(f"../../predictions/test/actuals/{hub1_name}_{hub2_name}_h{test_size}_w{window_size}_ann_actuals.csv", index=False)
     
     if verbose:
-        # Calculate MAPE
         mape_hub1 = mean_absolute_percentage_error(y_test[:, 0], test_predictions[:, 0]) * 100
         print(f"MAPE for {hub1_name}: {mape_hub1:.2f}%")
 
-        # Calculate MAPE for Hub 2
         mape_hub2 = mean_absolute_percentage_error(y_test[:, 1], test_predictions[:, 1]) * 100
         print(f"MAPE for {hub2_name}: {mape_hub2:.2f}%")
 

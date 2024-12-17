@@ -57,7 +57,6 @@ class TradingSystem:
         self.hub2_historical_data = hub2_historical_data
 
     def _load_forecast_data(self):
-        # Loading predictions and historical data based on the model type
         if "arima" in self.model:
             if self.mode == "validation":
                 hub1_data = f"{self.hub1_name}_v{self.validation_size}_h{self.test_size}_w{self.window_size}"
@@ -111,11 +110,9 @@ class TradingSystem:
             self.hub1_actuals = actuals[[self.hub1_name]]
             self.hub2_actuals = actuals[[self.hub2_name]]
 
-        # Calculating predicted returns
         self.hub1_predicted_returns = np.log(self.hub1_predictions.values / self.hub1_last_available_data.values)
         self.hub2_predicted_returns = np.log(self.hub2_predictions.values / self.hub2_last_available_data.values)
 
-        # Historical returns difference
         hub1_historical_returns = np.log(self.hub1_historical_data[self.window_size:][[self.hub1_name]].values / self.hub1_historical_data[:-self.window_size][[self.hub1_name]].values)
         hub2_historical_returns = np.log(self.hub2_historical_data[self.window_size:][[self.hub2_name]].values / self.hub2_historical_data[:-self.window_size][[self.hub2_name]].values)
         self.returns_difference = hub1_historical_returns - hub2_historical_returns
@@ -180,11 +177,9 @@ class TradingSystem:
             hub1_return = np.log(self.hub1_historical_data.values[-start + self.window_size + i].item() / self.hub1_historical_data.values[-start + i].item())
             hub2_return = np.log(self.hub2_historical_data.values[-start + self.window_size + i].item() / self.hub2_historical_data.values[-start + i].item())
 
-            # Transaction costs adjusted returns
             hub1_return_with_transaction_costs = np.log((self.hub1_historical_data.values[-start + self.window_size + i].item() - 2 * transaction_costs) / self.hub1_historical_data.values[-start + i].item())
             hub2_return_with_transaction_costs = np.log((self.hub2_historical_data.values[-start + self.window_size + i].item() - 2 * transaction_costs) / self.hub2_historical_data.values[-start + i].item())
 
-            # Net profits using historical data
             net_profit_hub1 = self.hub1_historical_data.values[-start + i + self.window_size].item() - self.hub1_historical_data.values[-start + i].item()
             net_profit_hub2 = self.hub2_historical_data.values[-start + i + self.window_size].item() - self.hub2_historical_data.values[-start + i].item()
 
@@ -216,13 +211,12 @@ class TradingSystem:
                     self.returns[i] = hub1_return - cointegration_beta*hub2_return
                     self.returns_with_transaction_costs[i] = hub1_return_with_transaction_costs - cointegration_beta*hub2_return_with_transaction_costs
 
-                self.trades[i] = 1
+                self.trades[i] = -1
             
             if self.returns[i] < 0:
                 pass
 
             if True:
-                # Check if the current date is a specific date
                 current_date = pd.Timestamp(self.hub1_historical_data.index[-start + i])
                 settle_date = pd.Timestamp(self.hub1_historical_data.index[-start + i + self.window_size])
                 specific_dates = { 
@@ -288,7 +282,6 @@ class TradingSystem:
         if plot:
             fig = go.Figure()
 
-            # Add line plot for pl
             fig.add_trace(go.Scatter(
                 x=self.hub1_historical_data.tail(self.test_size).index,
                 y=self.pl,
@@ -296,7 +289,6 @@ class TradingSystem:
                 name='Profit/Loss'
             ))
 
-            # Add scatter plot for trades
             fig.add_trace(go.Scatter(
                 x=self.hub1_historical_data.tail(self.test_size).index,
                 y=self.trades,
@@ -305,7 +297,6 @@ class TradingSystem:
                 yaxis='y2'
             ))
 
-            # Create axis objects
             fig.update_layout(
                 title='Profit/Loss and Trades Over Time',
                 xaxis=dict(title='Time'),
@@ -408,12 +399,10 @@ class TradingSystem:
         return mean_returns, std_returns, mean_returns_with_tc, ci_returns, ci_returns_with_tc
 
     def get_trade_rates(self):
-        # Calculate win, no-trade, and loss rates for returns
         win_rate_returns = sum(1 for r in self.returns if r > 0) / len(self.returns)
         no_trade_rate_returns = sum(1 for r in self.returns if r == 0) / len(self.returns)
         loss_rate_returns = sum(1 for r in self.returns if r < 0) / len(self.returns)
 
-        # Calculate win, no-trade, and loss rates for returns with transaction costs
         win_rate_returns_with_tc = sum(1 for r in self.returns_with_transaction_costs if r > 0) / len(self.returns_with_transaction_costs)
         no_trade_rate_returns_with_tc = sum(1 for r in self.returns_with_transaction_costs if r == 0) / len(self.returns_with_transaction_costs)
         loss_rate_returns_with_tc = sum(1 for r in self.returns_with_transaction_costs if r < 0) / len(self.returns_with_transaction_costs)

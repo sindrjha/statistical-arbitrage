@@ -38,7 +38,6 @@ if (require("rugarch") == FALSE) {
 }
 
 garch_test_predictions <- function(hubs, model = "sGARCH", dist = "norm", window_size = 5, test_size = 250, garch_order = c(1, 1)) {
-  # Initialize empty data frames for storing predictions and actual values
     predictions <- data.frame(matrix(ncol = 1, nrow = 0))
     colnames(predictions) <- c("Sigma")
 
@@ -67,7 +66,6 @@ garch_test_predictions <- function(hubs, model = "sGARCH", dist = "norm", window
     distribution.model = dist
     )
 
-    # Step 3: Fit the GARCH model
     garch_fit <- tryCatch({
         ugarchfit(spec = spec, data = returns_difference_train, solver = "hybrid")
     }, error = function(e) {
@@ -87,7 +85,6 @@ garch_test_predictions <- function(hubs, model = "sGARCH", dist = "norm", window
 }
 
 garch_validation_predictions <- function(hubs, model = "sGARCH", dist = "norm", window_size = 5, validation_size = 250, test_size = 250, garch_order = c(1, 1)) {
-  # Initialize empty data frames for storing predictions and actual values
     predictions <- data.frame(matrix(ncol = 1, nrow = 0))
     colnames(predictions) <- c("Sigma")
 
@@ -130,7 +127,6 @@ garch_validation_predictions <- function(hubs, model = "sGARCH", dist = "norm", 
 }
 
 garch_system <- function(hub1_name, hub2_name, model = "sGARCH", dist = "norm", validation_size = 250, test_size = 250, window_size = 5, garch_order=c(1,1), verbose = TRUE, save=TRUE) {
-  # Load the data
   hub_prices <- list(
         nbp = read.csv("../../data/interpolated/nbp_close_interpolated.csv"),
         peg = read.csv("../../data/interpolated/peg_close_interpolated.csv"),
@@ -144,7 +140,6 @@ garch_system <- function(hub1_name, hub2_name, model = "sGARCH", dist = "norm", 
 
     hubs <- data.frame(hub1 = hub1$CLOSE, hub2 = hub2$CLOSE)
 
-  # Perform the GARCH model
   garch_validation_predictions <- garch_validation_predictions(hubs, model = model, dist = dist, window_size = window_size, validation_size = validation_size, test_size = test_size, garch_order = garch_order)
   garch_predictions <- garch_test_predictions(hubs, model = model, dist = dist, window_size = window_size, test_size = test_size, garch_order = garch_order)
   
@@ -160,6 +155,5 @@ garch_system <- function(hub1_name, hub2_name, model = "sGARCH", dist = "norm", 
   }
 
 
-  # Return the predictions
   return(list(predictions = garch_predictions, validation_predictions = garch_validation_predictions))
 }

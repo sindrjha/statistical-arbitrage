@@ -27,7 +27,6 @@ if (require("Metrics") == FALSE) {
 
 arima_test_predictions <- function(hub,  test_size = 250, window_size = 5, arima_order) {
   
-  # Initialize empty data frames for storing predictions and actual values
   predictions <- data.frame(matrix(ncol = ncol(hub), nrow = 0))
   last_available <- data.frame(matrix(ncol = ncol(hub), nrow = 0))
   actuals <- data.frame(matrix(ncol = ncol(hub), nrow = 0))
@@ -40,10 +39,8 @@ arima_test_predictions <- function(hub,  test_size = 250, window_size = 5, arima
     train_size <- nrow(hub) - test_size - window_size + i
     hub_train <- hub[1:train_size, ]
     
-    # Fit the VECM model
     arima_model <- arima(hub_train, order = arima_order)
     
-    # Predict the future values
     hub_forecast <- predict(arima_model, n.ahead = window_size)$pred
     
     hub_prediction <- hub_forecast[window_size]
@@ -63,12 +60,10 @@ arima_test_predictions <- function(hub,  test_size = 250, window_size = 5, arima
     actuals <- rbind(actuals, actual_data)
   }
   
-  # Return both data frames as a list
   return(list(predictions = predictions, actuals = actuals, last_available = last_available))
 }
 
 arima_validation_predictions <- function(hub, validation_size=250, test_size = 250, window_size = 5, arima_order) {
-  # Initialize empty data frames for storing predictions and actual values
   predictions <- data.frame(matrix(ncol = ncol(hub), nrow = 0))
   last_available <- data.frame(matrix(ncol = ncol(hub), nrow = 0))
   actuals <- data.frame(matrix(ncol = ncol(hub), nrow = 0))
@@ -81,10 +76,8 @@ arima_validation_predictions <- function(hub, validation_size=250, test_size = 2
     train_size <- nrow(hub) - test_size - validation_size - window_size + i
     hub_train <- hub[1:train_size, ]
     
-    # Fit the VECM model
     arima_model <- arima(hub_train, order = arima_order)
     
-    # Predict the future values
     hub_forecast <- predict(arima_model, n.ahead = window_size)$pred
     
     hub_prediction <- hub_forecast[window_size]
@@ -104,7 +97,6 @@ arima_validation_predictions <- function(hub, validation_size=250, test_size = 2
     actuals <- rbind(actuals, actual_data)
   }
   
-  # Return both data frames as a list
   return(list(predictions = predictions, actuals = actuals, last_available = last_available))
 }
 
@@ -126,7 +118,6 @@ arima_system <- function(hub1_name, validation_size=250, test_size = 250, window
   train_size <- nrow(hub) - test_size - window_size + 1
   hub_train <- hub[1:train_size, ]
 
-  # Fit the ARIMA model
   arima_model <- auto.arima(hub_train, max.p = 20, max.q = 20, ic = "aic")
 
   arima_order <- arima_model$arma[c(1, 6, 2)]
@@ -198,7 +189,6 @@ arima_training_model <- function(hub1_name, test_size = 250, window_size = 5, ar
   train_size <- nrow(hub) - test_size - window_size + 1
   hub_train <- hub[1:train_size, ]
 
-  # Fit the ARIMA model
   arima_model <- auto.arima(hub_train, max.p = 20, max.q = 20, ic = "aic")
 
   arima_order <- arima_model$arma[c(1, 6, 2)]

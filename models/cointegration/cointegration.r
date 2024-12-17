@@ -25,7 +25,7 @@ cointegration <- function(hub1_name, hub2_name, rolling_window, validation_size 
         alpha = rep(NA, nrow(hubs)),
         beta = rep(NA, nrow(hubs)),
         sigma = rep(NA, nrow(hubs)),
-        residuals = rep(NA, nrow(hubs))  # Initialize with NA
+        residuals = rep(NA, nrow(hubs))
     )
 
     start <- nrow(hubs) - validation_size - test_size - window_size
@@ -40,8 +40,6 @@ cointegration <- function(hub1_name, hub2_name, rolling_window, validation_size 
             beta <- coef(ols)[2]
 
         }
-
-
 
         resids <- residuals(ols)
 
@@ -100,13 +98,11 @@ cointegration_volatilities <- function(results, hub1_name, hub2_name, model = "s
   }
 
 
-  # Return the predictions
   return(list(predictions = garch_predictions, validation_predictions = garch_validation_predictions))
 }
 
 
 garch_predictions <- function(results, model = "sGARCH", dist = "norm", garch_order =c(1,1), window_size = 5, validation_size = 250, test_size = 250, mode = "validation") {
-  # Initialize empty data frames for storing predictions and actual values
   difference <- results$hub_diff
   predictions <- data.frame(matrix(ncol = 1, nrow = 0))
   colnames(predictions) <- c("Sigma")

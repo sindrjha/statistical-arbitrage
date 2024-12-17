@@ -57,12 +57,10 @@ predict.TVECM <- function(object, newdata, n.ahead=5,
                       starting=starting, innov=innov)
                       
   if (n.ahead == 1) {
-    res <- matrix(res, nrow = 1)  # Convert vector to matrix with 1 row
+    res <- matrix(res, nrow = 1)
   }
 
-  # Format results by assigning column names
   colnames(res) <- colnames(original.data)
-  ## format results
   colnames(res) <- colnames(original.data)
   end_rows <- nrow(original.data) + n.ahead
   if(hasArg("returnStarting") && isTRUE(list(...)["returnStarting"])) {
@@ -76,7 +74,6 @@ predict.TVECM <- function(object, newdata, n.ahead=5,
 }
 
 tvecm_test_predictions <- function(hubs, window_size = 5, test_size = 250, nthresh = 1, lags) {
-  # Initialize empty data frames for storing predictions and actual values
   predictions <- data.frame(matrix(ncol = ncol(hubs), nrow = 0))
   last_available <- data.frame(matrix(ncol = ncol(hubs), nrow = 0))
   actuals <- data.frame(matrix(ncol = ncol(hubs), nrow = 0))
@@ -110,12 +107,10 @@ tvecm_test_predictions <- function(hubs, window_size = 5, test_size = 250, nthre
     actuals <- rbind(actuals, hub_actual)
   }
   
-  # Return both data frames as a list
   return(list(predictions = predictions, actuals = actuals, last_available = last_available))
 }
 
 tvecm_validation_predictions <- function(hubs, window_size = 5, validation_size = 250, test_size = 250, nthresh=1, lags) {
-  # Initialize empty data frames for storing predictions and actual values
   predictions <- data.frame(matrix(ncol = ncol(hubs), nrow = 0))
   last_available <- data.frame(matrix(ncol = ncol(hubs), nrow = 0))
   actuals <- data.frame(matrix(ncol = ncol(hubs), nrow = 0))
@@ -148,7 +143,6 @@ tvecm_validation_predictions <- function(hubs, window_size = 5, validation_size 
     actuals <- rbind(actuals, hub_actual)
   }
   
-  # Return both data frames as a list
   return(list(predictions = predictions, actuals = actuals, last_available = last_available))
 }
 

@@ -12,7 +12,6 @@ if (require("dplyr") == FALSE) {
 }
 
 vecm_test_predictions <- function(hubs, window_size = 5, test_size = 250, lags) {
-  # Initialize empty data frames for storing predictions and actual values
   predictions <- data.frame(matrix(ncol = ncol(hubs), nrow = 0))
   last_available <- data.frame(matrix(ncol = ncol(hubs), nrow = 0))
   actuals <- data.frame(matrix(ncol = ncol(hubs), nrow = 0))
@@ -24,10 +23,8 @@ vecm_test_predictions <- function(hubs, window_size = 5, test_size = 250, lags) 
   for (i in 1:test_size) {
     train_size <- nrow(hubs) - test_size - window_size + i
     hub_train <- hubs[1:train_size, ]
-    # Fit the VECM model
     vecm <- VECM(hub_train, lag = lags, r = 1, include = "const", estim = "ML")
     
-    # Predict the future values
     hub_forecast <- predict(vecm, n.ahead = window_size)
     
     hub_prediction <- hub_forecast[window_size, , drop = FALSE]
@@ -40,12 +37,10 @@ vecm_test_predictions <- function(hubs, window_size = 5, test_size = 250, lags) 
     actuals <- rbind(actuals, hub_actual)
   }
   
-  # Return both data frames as a list
   return(list(predictions = predictions, actuals = actuals, last_available = last_available))
 }
 
 vecm_validation_predictions <- function(hubs, window_size = 5, validation_size = 250, test_size = 250, lags) {
-  # Initialize empty data frames for storing predictions and actual values
   predictions <- data.frame(matrix(ncol = ncol(hubs), nrow = 0))
   last_available <- data.frame(matrix(ncol = ncol(hubs), nrow = 0))
   actuals <- data.frame(matrix(ncol = ncol(hubs), nrow = 0))
@@ -58,10 +53,8 @@ vecm_validation_predictions <- function(hubs, window_size = 5, validation_size =
   for (i in 1:validation_size) {
     train_size <- nrow(hubs) - test_size - validation_size - window_size + i
     hub_train <- hubs[1:train_size, ]
-    # Fit the VECM model
     vecm <- VECM(hub_train, lag = lags, r = 1, include = "const", estim = "ML")
     
-    # Predict the future values
     hub_forecast <- predict(vecm, n.ahead = window_size)
     
     hub_prediction <- hub_forecast[window_size, , drop = FALSE]
@@ -74,7 +67,6 @@ vecm_validation_predictions <- function(hubs, window_size = 5, validation_size =
     actuals <- rbind(actuals, hub_actual)
   }
   
-  # Return both data frames as a list
   return(list(predictions = predictions, actuals = actuals, last_available = last_available))
 }
 

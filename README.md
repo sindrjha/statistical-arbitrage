@@ -1,6 +1,6 @@
-# Statistical Arbitrage
+# Pairs trading
 
-This project focuses on implementing and analyzing statistical arbitrage strategies in european natural gas markets.
+This project focuses on implementing and analyzing pairs trading strategies in european natural gas markets.
 
 ## Statisical tests
 
